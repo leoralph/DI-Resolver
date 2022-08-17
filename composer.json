@@ -1,0 +1,16 @@
+{
+    "name": "leoralph/dependency-resolver",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "LeoRalph\\DependencyResolver\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Leonardo Ralph",
+            "email": "theleoralph@gmail.com"
+        }
+    ],
+    "require": {}
+}
