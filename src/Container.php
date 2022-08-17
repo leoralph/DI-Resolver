@@ -2,6 +2,8 @@
 
 namespace LeoRalph\DependencyResolver;
 
+use LeoRalph\DependencyResolver\Exception\ContainerException;
+
 class Container
 {
     private array $classes;
@@ -36,7 +38,7 @@ class Container
     public function getParam(string $className, string $param)
     {
         if (!$this->paramExistsForClass($className, $param)) {
-            //
+            throw new ContainerException("Param $param does not exist for class $className");
         }
 
         return $this->classes[$className][$param];

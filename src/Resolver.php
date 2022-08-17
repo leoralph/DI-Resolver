@@ -2,6 +2,7 @@
 
 namespace LeoRalph\DependencyResolver;
 
+use LeoRalph\DependencyResolver\Exception\ResolverException;
 use ReflectionClass;
 use ReflectionParameter;
 
@@ -57,7 +58,7 @@ class Resolver
         }
 
         if (!$param->hasType() && !$param->getType()->isBuiltin()) {
-            //
+            throw new ResolverException("Cannot resolve param $param for class $className");
         }
 
         $type = $param->getType();
