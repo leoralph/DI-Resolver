@@ -4,65 +4,109 @@ namespace LeoRalph\DependencyResolver;
 
 use LeoRalph\DependencyResolver\Exception\ResolverException;
 use ReflectionClass;
+use ReflectionMethod;
 use ReflectionParameter;
 
 class Resolver
 {
-    public function __construct(private Container $container)
-    {
+    public function __construct(
+        private Container $container
+    ) {
     }
 
-    public function resolve(string $className)
+    /**
+     * Resolves a class, then return the object.
+     *
+     * @param string $className
+     * @return object
+     */
+    public function resolveClass(string $className): object
     {
-        $reflection = new ReflectionClass($className);
-        $constructor = $reflection->getConstructor();
+        $reflectionClass = new ReflectionClass($className);
+        $constructor = $reflectionClass->getConstructor();
 
         if (!$constructor) {
-            return $reflection->newInstanceWithoutConstructor();
+            return $reflectionClass->newInstanceWithoutConstructor();
         }
 
         $parameters = $constructor->getParameters();
 
         if (!$parameters) {
-            return $reflection->newInstance();
+            return $reflectionClass->newInstance();
         }
 
         $arguments = $this->tryGetArguments($className, $parameters);
 
-        return $reflection->newInstanceArgs($arguments);
+        return $reflectionClass->newInstanceArgs($arguments);
     }
 
-    private function tryGetArguments(string $className, array $parameters)
+    /**
+     * Resolve a method from the given class, then returns it.
+     *
+     * @param string $className
+     * @param string $method
+     * @return mixed
+     */
+    public function resolveMethod(string $className, string $method)
+    {
+        $object = $this->resolveClass($className);
+        $reflectionMethod = new ReflectionMethod($object, $method);
+
+        $parameters = $reflectionMethod->getParameters();
+
+        if (!$parameters) {
+            return $reflectionMethod->invoke($object);
+        }
+
+        $arguments = $this->tryGetArguments($className, $parameters);
+
+        return $reflectionMethod->invokeArgs($object, $arguments);
+    }
+
+    /**
+     * Get arguments for given parameters.
+     *
+     * @param string $className
+     * @param array $parameters
+     * @return array
+     */
+    private function tryGetArguments(string $className, array $parameters): array
     {
         $arguments = [];
 
-        foreach ($parameters as $param) {
-            $this->resolveParam($className, $arguments, $param);
+        foreach ($parameters as $parameter) {
+            $arguments[] = $this->resolveParameter($className, $parameter);
         }
 
         return $arguments;
     }
 
-    private function resolveParam(string $className, array &$arguments, ReflectionParameter $param)
+    /**
+     * Resolve a parameter for the given class, throws an Exception if the parameter is not found.
+     *
+     * @param string $className
+     * @param ReflectionParameter $parameter
+     * @throws \LeoRalph\DependencyResolver\Exceptions\ResolverException
+     * @return mixed
+     */
+    private function resolveParameter(string $className, ReflectionParameter $parameter): mixed
     {
-        $paramName = $param->getName();
+        $paramName = $parameter->getName();
 
         if ($this->container->paramExistsForClass($className, $paramName)) {
-            $arguments[] = $this->container->getParam($className, $paramName);
-            return;
+            return $this->container->getParam($className, $paramName);
         }
 
-        if ($param->isDefaultValueAvailable()) {
-            $arguments[] = $param->getDefaultValue();
-            return;
+        if ($parameter->isDefaultValueAvailable()) {
+            return $parameter->getDefaultValue();
         }
 
-        if (!$param->hasType() && !$param->getType()->isBuiltin()) {
-            throw new ResolverException("Cannot resolve param $param for class $className");
+        if (!$parameter->hasType() && !$parameter->getType()->isBuiltin()) {
+            throw new ResolverException("Cannot resolve param $paramName for class $className");
         }
 
-        $type = $param->getType();
+        $type = $parameter->getType();
 
-        $arguments[] = $this->resolve($type);
+        return $this->resolveClass($type);
     }
 }

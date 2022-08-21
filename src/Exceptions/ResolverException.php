@@ -1,6 +1,6 @@
 <?php
 
-namespace LeoRalph\DependencyResolver\Exception;
+namespace LeoRalph\DependencyResolver\Exceptions;
 
 class ResolverException extends \Exception
 {
