@@ -1,5 +1,5 @@
 {
-    "name": "leoralph/dependency-resolver",
+    "name": "leoralph/di-resolver",
     "type": "library",
     "require": {
         "php": ">=8.0"
